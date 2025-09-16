@@ -9,7 +9,6 @@ use Hitrov\OCI\Signer;
 
 class OracleCloudLogsClient
 {
-    protected Client $client;
     protected Signer $signer;
     protected string $endpoint;
     protected string $logGroupId;
@@ -42,8 +41,14 @@ class OracleCloudLogsClient
             $this->fingerprint
         );
         $this->signer->setKeyProvider($keyProvider);
+    }
 
-        $this->client = new Client([
+    /**
+     * Create a new HTTP client instance
+     */
+    protected function createClient(): Client
+    {
+        return new Client([
             'base_uri' => $this->endpoint,
             'timeout' => 30,
             'headers' => [
@@ -88,11 +93,12 @@ class OracleCloudLogsClient
     public function sendLog(array $logEntry): bool
     {
         try {
+            $client = $this->createClient();
             $path = "/20200831/logs/{$this->logId}/actions/push";
             $body = json_encode($this->getLogEntryBatch( $logEntry));
             $headers = $this->generateAuthHeaders('POST', $path, $body);
 
-            $response = $this->client->post($path, [
+            $response = $client->post($path, [
                 'headers' => $headers,
                 'body' => $body
             ]);
@@ -125,11 +131,12 @@ class OracleCloudLogsClient
         }
 
         try {
+            $client = $this->createClient();
             $path = "/20200831/logs/{$this->logId}/actions/push";
             $body = json_encode($this->getLogEntryBatch( $logEntries));
             $headers = $this->generateAuthHeaders('POST', $path, $body);
 
-            $response = $this->client->post($path, [
+            $response = $client->post($path, [
                 'headers' => $headers,
                 'body' => $body
             ]);

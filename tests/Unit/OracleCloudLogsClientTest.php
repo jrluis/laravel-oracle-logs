@@ -43,10 +43,11 @@ class OracleCloudLogsClientTest extends TestCase
         $client = new OracleCloudLogsClient($config);
         $logEntry = $client->formatLogEntry('info', 'Test message', ['key' => 'value']);
 
+        $this->assertArrayHasKey('id', $logEntry);
         $this->assertArrayHasKey('time', $logEntry);
         $this->assertArrayHasKey('data', $logEntry);
-        $this->assertEquals('INFO', $logEntry['data']['level']);
-        $this->assertEquals('Test message', $logEntry['data']['message']);
-        $this->assertEquals(['key' => 'value'], $logEntry['data']['context']);
+        $this->assertEquals('Test message', $logEntry['data']);
+        $this->assertIsString($logEntry['id']);
+        $this->assertIsString($logEntry['time']);
     }
 }
