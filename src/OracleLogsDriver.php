@@ -35,7 +35,6 @@ class OracleLogsDriver extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
-        info("Writing log record to Oracle Cloud Logs");
         $logEntry = $this->client->formatLogEntry(
             $record->level->getName(),
             $record->message,
@@ -45,8 +44,6 @@ class OracleLogsDriver extends AbstractProcessingHandler
         $this->logBuffer[] = $logEntry;
 
         // Flush if buffer is full or it's time to flush
-        info("Log buffer size: " . count($this->logBuffer));
-        info("Buffer size: " . $this->bufferSize);
         if (count($this->logBuffer) >= $this->bufferSize) {
             $this->flush();
         }
@@ -86,7 +83,6 @@ class OracleLogsDriver extends AbstractProcessingHandler
      */
     public function flush(): void
     {
-        info("Flushing log buffer to Oracle Cloud Logs");
         if (empty($this->logBuffer)) {
             return;
         }
@@ -96,7 +92,7 @@ class OracleLogsDriver extends AbstractProcessingHandler
             $this->logBuffer = [];
         } catch (\Exception $e) {
             // Log error to prevent infinite loops
-            error_log("Failed to flush Oracle Cloud Logs: " . $e->getMessage());
+            error_log("Oracle Cloud Logs Driver: Failed to flush Oracle Cloud Logs: " . $e->getMessage());
         }
     }
 

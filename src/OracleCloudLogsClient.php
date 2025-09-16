@@ -88,8 +88,6 @@ class OracleCloudLogsClient
     public function sendLog(array $logEntry): bool
     {
         try {
-            Log::debug("Sending log entry to Oracle Cloud Logs", ['log_id' => $this->logId]);
-            
             $path = "/20200831/logs/{$this->logId}/actions/push";
             $body = json_encode($this->getLogEntryBatch( $logEntry));
             $headers = $this->generateAuthHeaders('POST', $path, $body);
@@ -101,25 +99,18 @@ class OracleCloudLogsClient
 
             $success = $response->getStatusCode() === 200;
             
-            if ($success) {
-                Log::debug("Successfully sent log entry to Oracle Cloud Logs");
-            } else {
-                Log::warning("Unexpected response code from Oracle Cloud Logs", [
-                    'status_code' => $response->getStatusCode(),
-                    'response' => $response->getBody()->getContents()
-                ]);
+            if (!$success) {
+                error_log("Oracle Cloud Logs: Unexpected response code from Oracle Cloud Logs - Status: {$response->getStatusCode()}, Response: " . $response->getBody()->getContents());
             }
 
             return $success;
         } catch (RequestException $e) {
-            Log::error("Oracle Cloud Logs request failed", [
-                'error' => $e->getMessage(),
-                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null,
-                'status_code' => $e->hasResponse() ? $e->getResponse()->getStatusCode() : null
-            ]);
+            $responseBody = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : 'No response body';
+            $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 'No status code';
+            error_log("Oracle Cloud Logs: Request failed - Error: {$e->getMessage()}, Response: {$responseBody}, Status: {$statusCode}");
             return false;
         } catch (\Exception $e) {
-            Log::error("Oracle Cloud Logs error", ['error' => $e->getMessage()]);
+            error_log("Oracle Cloud Logs: Error - {$e->getMessage()}");
             return false;
         }
     }
@@ -134,11 +125,6 @@ class OracleCloudLogsClient
         }
 
         try {
-            Log::debug("Sending batch log entries to Oracle Cloud Logs", [
-                'count' => count($logEntries),
-                'log_id' => $this->logId
-            ]);
-            
             $path = "/20200831/logs/{$this->logId}/actions/push";
             $body = json_encode($this->getLogEntryBatch( $logEntries));
             $headers = $this->generateAuthHeaders('POST', $path, $body);
@@ -150,31 +136,20 @@ class OracleCloudLogsClient
 
             $success = $response->getStatusCode() === 200;
             
-            if ($success) {
-                Log::debug("Successfully sent batch log entries to Oracle Cloud Logs", [
-                    'count' => count($logEntries)
-                ]);
-            } else {
-                Log::warning("Unexpected response code from Oracle Cloud Logs", [
-                    'status_code' => $response->getStatusCode(),
-                    'response' => $response->getBody()->getContents()
-                ]);
+            if (!$success) {
+                error_log("Oracle Cloud Logs: Unexpected response code from Oracle Cloud Logs - Status: {$response->getStatusCode()}, Response: " . $response->getBody()->getContents());
             }
 
             return $success;
         } catch (RequestException $e) {
-            Log::error("Oracle Cloud Logs batch request failed", [
-                'error' => $e->getMessage(),
-                'count' => count($logEntries),
-                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null,
-                'status_code' => $e->hasResponse() ? $e->getResponse()->getStatusCode() : null
-            ]);
+            $count = count($logEntries);
+            $responseBody = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : 'No response body';
+            $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 'No status code';
+            error_log("Oracle Cloud Logs: Batch request failed - Error: {$e->getMessage()}, Count: {$count}, Response: {$responseBody}, Status: {$statusCode}");
             return false;
         } catch (\Exception $e) {
-            Log::error("Oracle Cloud Logs batch error", [
-                'error' => $e->getMessage(),
-                'count' => count($logEntries)
-            ]);
+            $count = count($logEntries);
+            error_log("Oracle Cloud Logs: Batch error - Error: {$e->getMessage()}, Count: {$count}");
             return false;
         }
     }
@@ -231,7 +206,7 @@ class OracleCloudLogsClient
             $testEntry = $this->formatLogEntry('info', 'Connection test from Laravel Oracle Logs');
             return $this->sendLog($testEntry);
         } catch (\Exception $e) {
-            Log::error("Oracle Cloud Logs connection test failed", ['error' => $e->getMessage()]);
+            error_log("Oracle Cloud Logs: Connection test failed - Error: {$e->getMessage()}");
             return false;
         }
     }
