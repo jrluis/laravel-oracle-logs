@@ -9,7 +9,6 @@ use Hitrov\OCI\Signer;
 
 class OracleCloudLogsClient
 {
-    protected Signer $signer;
     protected string $endpoint;
     protected string $logGroupId;
     protected string $logId;
@@ -31,16 +30,6 @@ class OracleCloudLogsClient
         $this->fingerprint = $config['fingerprint'];
         $this->privateKey = $config['private_key'];
         $this->passphrase = $config['passphrase'] ?? '';
-
-        // Initialize the Hitrov OCI signer with custom key provider
-        $this->signer = new Signer();
-        $keyProvider = new PrivateKeyProvider(
-            $this->privateKey,
-            $this->tenancyId,
-            $this->userId,
-            $this->fingerprint
-        );
-        $this->signer->setKeyProvider($keyProvider);
     }
 
     /**
@@ -52,8 +41,9 @@ class OracleCloudLogsClient
             'base_uri' => $this->endpoint,
             'timeout' => 30,
             'headers' => [
-                'Content-Type' => 'application/json',
-                'User-Agent' => 'Laravel-Oracle-Logs/1.0',
+                'user-agent' => 'Laravel-Oracle-Logs/1.0',
+                'content-type' => 'application/json',
+                'accept' => 'application/json',
             ],
         ]);
     }
@@ -64,9 +54,18 @@ class OracleCloudLogsClient
     protected function generateAuthHeaders(string $method, string $path, string $body = ''): array
     {
         try {
+            $signer = new Signer();
+            $keyProvider = new PrivateKeyProvider(
+                $this->privateKey,
+                $this->tenancyId,
+                $this->userId,
+                $this->fingerprint
+            );
+            $signer->setKeyProvider($keyProvider);
+
             $url = $this->endpoint . $path;
-            $headers = $this->signer->getHeaders($url, $method, $body);
-            
+            $headers = $signer->getHeaders($url, $method, $body);
+
             // Convert array of header strings to associative array
             $headerArray = [];
             foreach ($headers as $header) {
@@ -76,9 +75,6 @@ class OracleCloudLogsClient
                 }
             }
 
-            // Add additional headers
-            $headerArray['accept'] = 'application/json';
-            $headerArray['user-agent'] = 'Laravel-Oracle-Logs/1.0';
 
             return $headerArray;
         } catch (\Exception $e) {
@@ -104,7 +100,7 @@ class OracleCloudLogsClient
             ]);
 
             $success = $response->getStatusCode() === 200;
-            
+
             if (!$success) {
                 error_log("Oracle Cloud Logs: Unexpected response code from Oracle Cloud Logs - Status: {$response->getStatusCode()}, Response: " . $response->getBody()->getContents());
             }
@@ -142,7 +138,7 @@ class OracleCloudLogsClient
             ]);
 
             $success = $response->getStatusCode() === 200;
-            
+
             if (!$success) {
                 error_log("Oracle Cloud Logs: Unexpected response code from Oracle Cloud Logs - Status: {$response->getStatusCode()}, Response: " . $response->getBody()->getContents());
             }
@@ -179,17 +175,17 @@ class OracleCloudLogsClient
         // Generate 16 bytes (128 bits) of random data or use the data passed into the function.
         $data = $data ?? random_bytes(16);
         assert(strlen($data) == 16);
-    
+
         // Set version to 0100
         $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
         // Set bits 6-7 to 10
         $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-    
+
         // Output the 36 character UUID.
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
-    
+
     /**
      * Format log entry for Oracle Cloud Logs
      */
