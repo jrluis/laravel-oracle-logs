@@ -106,7 +106,7 @@ class OracleLogsDriver extends AbstractProcessingHandler
         foreach ($records as $record) {
             $logEntries[] = $this->client->formatLogEntry(
                 $record->level->getName(),
-                $record->message,
+                strtoupper($record->level->getName()) . ': ' . $record->message,
                 $this->formatContext($record)
             );
         }
