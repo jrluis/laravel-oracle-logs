@@ -54,28 +54,7 @@ class OracleLogsDriver extends AbstractProcessingHandler
      */
     protected function formatContext(LogRecord $record): array
     {
-        $context = $record->context;
-
-        // Add extra fields
-        if (isset($record->extra)) {
-            $context = array_merge($context, $record->extra);
-        }
-
-        // Add channel information
-        $context['channel'] = $record->channel;
-
-        // Add formatted timestamp
-        $context['formatted_timestamp'] = $record->datetime->format('Y-m-d H:i:s');
-
-        // Add memory usage if available
-        if (function_exists('memory_get_usage')) {
-            $context['memory_usage'] = memory_get_usage(true);
-        }
-
-        // Add process ID
-        $context['process_id'] = getmypid();
-
-        return $context;
+        return $record->context;
     }
 
     /**

@@ -196,7 +196,7 @@ class OracleCloudLogsClient
         return [
             'id' => $this->guidv4(),
             'time' => $timestamp,
-            'data' => $message
+            'data' => strtoupper($level) . ': ' . $message . ' ' . json_encode($context)
         ];
     }
 
